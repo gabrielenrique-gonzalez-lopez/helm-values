@@ -77,21 +77,21 @@ nginx:
   enabled: false
 
 ingress:
-  enabled: false
+  enabled: true
   # Used to create an Ingress record.
   hosts:
-    - name: sonarqube.your-org.com
+    - name: sonarqube.5bd11e9cd6df423cb488.eastus.aksapp.io
       # Different clouds or configurations might need /* as the default path
       path: /
       # For additional control over serviceName and servicePort
       # serviceName: someService
       # servicePort: somePort
       # the pathType can be one of the following values: Exact|Prefix|ImplementationSpecific(default)
-      # pathType: ImplementationSpecific
+      pathType: Prefix
   annotations:
   # kubernetes.io/tls-acme: "true"
   # This property allows for reports up to a certain size to be uploaded to SonarQube
-    nginx.ingress.kubernetes.io/proxy-body-size: "64m"
+    kubernetes.io/ingress.class: addon-http-application-routing
 
   # Set the ingressClassName on the ingress record
   # ingressClassName: nginx
@@ -102,9 +102,9 @@ ingress:
   #  traffic-type: internal
   tls: []
   # Secrets must be manually created in the namespace. To generate a self-signed certificate (and private key) and then create the secret in the cluster please refer to official documentation available at https://kubernetes.github.io/ingress-nginx/user-guide/tls/#tls-secrets
-  # - secretName: chart-example-tls
+  # - secretName: sonarqube-tls-certificate-secret
   #   hosts:
-  #     - chart-example.local
+  #     - sonarqube.azure-upm-pfg.com
 
 route:
   enabled: false
@@ -315,10 +315,10 @@ jvmCeOpts: ""
 
 ## a monitoring passcode needs to be defined in order to get reasonable probe results
 # not setting the monitoring passcode will result in a deployment that will never be ready
-monitoringPasscode: "define_it"
+# monitoringPasscode: "define_it"
 # Alternatively, you can define the passcode loading it from an existing secret specifying the right key
-# monitoringPasscodeSecretName: "pass-secret-name"
-# monitoringPasscodeSecretKey: "pass-key"
+monitoringPasscodeSecretName: "pass-secret-name"
+monitoringPasscodeSecretKey: "pass-key"
 
 ## Environment variables to attach to the pods
 ##
@@ -344,7 +344,7 @@ resources:
     memory: 2Gi
 
 persistence:
-  enabled: false
+  enabled: true
   ## Set annotations on pvc
   annotations: {}
 
@@ -358,7 +358,7 @@ persistence:
   ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
   ##   GKE, AWS & OpenStack)
   ##
-  storageClass:
+  storageClass: default
   accessMode: ReadWriteOnce
   size: 5Gi
   uid: 1000
@@ -415,19 +415,19 @@ postgresql:
   #   imageRegistry: ''
   #   imagePullSecrets: ''
   ## bitnami/postgres image tag
-  # image:
-  #   tag: 11.7.0-debian-10-r9
+  image:
+    tag: 11.7.0-debian-10-r9
   # existingSecret Name of existing secret to use for PostgreSQL passwords
   # The secret has to contain the keys postgresql-password which is the password for postgresqlUsername when it is
   # different of postgres, postgresql-postgres-password which will override postgresqlPassword,
   # postgresql-replication-password which will override replication.password and postgresql-ldap-password which will be
   # used to authenticate on LDAP. The value is evaluated as a template.
-  # existingSecret: ""
+  existingSecret: "sonarqube-postgresql"
   #
   # The bitnami chart enforces the key to be "postgresql-password". This value is only here for historic purposes
-  # existingSecretPasswordKey: "postgresql-password"
-  postgresqlUsername: "sonarUser"
-  postgresqlPassword: "sonarPass"
+  existingSecretPasswordKey: "postgresql-postgres-password"
+  # postgresqlUsername: "sonarUser"
+  # postgresqlPassword: "sonarPass"
   postgresqlDatabase: "sonarDB"
   # Specify the TCP port that PostgreSQL should use
   service:
@@ -442,8 +442,8 @@ postgresql:
   persistence:
     enabled: true
     accessMode: ReadWriteOnce
-    size: 20Gi
-    storageClass:
+    size: 10Gi
+    storageClass: default
   securityContext:
     # For standard Kubernetes deployment, set enabled=true
     # If using OpenShift, enabled=false for restricted SCC and enabled=true for anyuid/nonroot SCC
